@@ -1,3 +1,8 @@
+#############################################
+# Copyright (c) 2018 Fabricio JC Montenegro #
+# Version 1.0                               #
+# https://github.com/SplinterFM/3DViewer    #
+#############################################
 import pygame
 from point3d import Point3d
 
@@ -17,8 +22,9 @@ EDGE_WIDTH = 1
 ORIGIN = Point3d()
 CENTER = Point3d(WIDTH/2., HEIGHT/2., 0)
 
-CAM_MOVE_RATE   = 0.2
+CAM_MOVE_RATE   = 0.5
 CAM_ROTATE_RATE = 0.01
+CAM_ZOOM_RATE   = 0.05
 
 TEST_POINTS = [
     Point3d(-100,-100,-100),Point3d(100,-100,-100),Point3d(100,100,-100),Point3d(-100,100,-100),
@@ -37,10 +43,16 @@ class View:
         self.axis_y = Point3d(0, 100, 0)
         self.axis_z = Point3d(0, 0, 100)
         self.cam_center = Point3d(CENTER)
-        self.cam_pitch  = 0.0
-        self.cam_yaw = 0.0
+        self.cam_pitch  = 0.2
+        self.cam_yaw  = -0.2
+        self.cam_zoom = 1
 
     def run(self):
+        print "Controls:"
+        print "w, a, s, d: rotates camera"
+        print "up, down, right, left: moves camera"
+        print "=, -: zooms in and out"
+        print "Esc: exits program"
         while self.running:
             key_pressed = pygame.key.get_pressed()
 
@@ -69,6 +81,11 @@ class View:
                 self.cam_yaw += CAM_ROTATE_RATE
             if key_pressed[pygame.K_d]:
                 self.cam_yaw -= CAM_ROTATE_RATE
+            if key_pressed[pygame.K_EQUALS]:
+                self.cam_zoom += CAM_ZOOM_RATE
+            if key_pressed[pygame.K_MINUS]:
+                if self.cam_zoom-CAM_ZOOM_RATE > 0.0:
+                    self.cam_zoom -= CAM_ZOOM_RATE
 
             self.screen.fill(BACKGROUND)
             self.display()
@@ -76,20 +93,19 @@ class View:
 
     def convert(self, point):
         """Gets a 3d point in the space and converts to a 2d point in the screen"""
-        # print "-----------"
-        # print "converting", point
-        new_point = Point3d(point)
-        # print "rotating in", self.cam_pitch
-        new_point.rotateX(self.cam_pitch)
-        # print "got", new_point
-        new_point.rotateY(self.cam_yaw)
 
-        # print "inverting y"
+        # starts by compying the point so we dont change the original
+        new_point = Point3d(point)
+        # scales point 
+        new_point.scale(self.cam_zoom)
+        # applies rotation
+        new_point.rotateX(self.cam_pitch)
+        new_point.rotateY(self.cam_yaw)
+        # inverts y since the screen represents y starting on the top and growing downward
         new_point.y *= -1
-        # print "got", new_point
-        # print "now translating in", self.cam_center
+        # translates from the "point world" to the "cam world"
         new_point += self.cam_center
-        # print "got", new_point
+        # returns a 2d int tuple to be drawn
         return (int(new_point.x), int(new_point.y))
 
     def display(self):
@@ -108,6 +124,7 @@ class View:
             self.screen, BLUE,
             self.convert(ORIGIN),
             self.convert(self.axis_z), EDGE_WIDTH)
+
         # testing cube
         for p in TEST_POINTS:
             pygame.draw.circle(self.screen,BLUE, self.convert(p),5)
