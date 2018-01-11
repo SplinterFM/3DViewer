@@ -15,9 +15,9 @@ BLUE = pygame.Color(0,0,255)
 
 BACKGROUND = pygame.Color('black')
 POINT_COLOR = pygame.Color(200,200,200,255)
-EDGE_COLOR  = pygame.Color(100,150,255,255)
+LINE_COLOR  = pygame.Color(100,150,255,255)
 POINT_RADIUS = 3
-EDGE_WIDTH = 1
+LINE_WIDTH = 1
 
 ORIGIN = Point3d()
 CENTER = Point3d(WIDTH/2., HEIGHT/2., 0)
@@ -46,13 +46,15 @@ class View:
         self.cam_pitch  = 0.2
         self.cam_yaw  = -0.2
         self.cam_zoom = 1
+        self.show_axis = True
 
-    def run(self):
+    def run(self, update):
+        """Receives an update function to be called every loop"""
         print "Controls:"
-        print "w, a, s, d: rotates camera"
+        print "w, a, s, d:            rotates camera"
         print "up, down, right, left: moves camera"
-        print "=, -: zooms in and out"
-        print "Esc: exits program"
+        print "=, -:                  zooms in and out"
+        print "Esc:                   exits program"
         while self.running:
             key_pressed = pygame.key.get_pressed()
 
@@ -88,7 +90,7 @@ class View:
                     self.cam_zoom -= CAM_ZOOM_RATE
 
             self.screen.fill(BACKGROUND)
-            self.display()
+            self.display(update)
             pygame.display.flip()
 
     def convert(self, point):
@@ -108,53 +110,51 @@ class View:
         # returns a 2d int tuple to be drawn
         return (int(new_point.x), int(new_point.y))
 
-    def display(self):
-        # display X axis
+    def drawLine(self, p1, p2, color=LINE_COLOR, width=LINE_WIDTH):
         pygame.draw.aaline(
-            self.screen, RED,
-            self.convert(ORIGIN),
-            self.convert(self.axis_x), EDGE_WIDTH)
-        # display Y axis
-        pygame.draw.aaline(
-            self.screen, GREEN,
-            self.convert(ORIGIN),
-            self.convert(self.axis_y), EDGE_WIDTH)
-        # display Z axis
-        pygame.draw.aaline(
-            self.screen, BLUE,
-            self.convert(ORIGIN),
-            self.convert(self.axis_z), EDGE_WIDTH)
+            self.screen, color,
+            self.convert(p1),
+            self.convert(p2), width)
 
-        # testing cube
-        for p in TEST_POINTS:
-            pygame.draw.circle(self.screen,BLUE, self.convert(p),5)
-        for i in range(3):
-            pygame.draw.aaline(
-                self.screen, pygame.Color('grey'),
-                self.convert(TEST_POINTS[i]),
-                self.convert(TEST_POINTS[i+1]), EDGE_WIDTH)
-        pygame.draw.aaline(
-                self.screen, pygame.Color('grey'),
-                self.convert(TEST_POINTS[3]),
-                self.convert(TEST_POINTS[0]), EDGE_WIDTH)
-        for i in range(4,7):
-            pygame.draw.aaline(
-                self.screen, pygame.Color('grey'),
-                self.convert(TEST_POINTS[i]),
-                self.convert(TEST_POINTS[i+1]), EDGE_WIDTH)
-        pygame.draw.aaline(
-                self.screen, pygame.Color('grey'),
-                self.convert(TEST_POINTS[-1]),
-                self.convert(TEST_POINTS[4]), EDGE_WIDTH)
-        for i in range(4):
-            pygame.draw.aaline(
-                self.screen, pygame.Color('grey'),
-                self.convert(TEST_POINTS[i]),
-                self.convert(TEST_POINTS[i+4]), EDGE_WIDTH)
+    def drawPoint(self, p, color=POINT_COLOR, radius=POINT_RADIUS):
+        pygame.draw.circle(self.screen,color, self.convert(p),radius)
 
+    def display(self, update):
+        if self.show_axis:
+            # display X axis
+            pygame.draw.aaline(
+                self.screen, RED,
+                self.convert(ORIGIN),
+                self.convert(self.axis_x), LINE_WIDTH)
+            # display Y axis
+            pygame.draw.aaline(
+                self.screen, GREEN,
+                self.convert(ORIGIN),
+                self.convert(self.axis_y), LINE_WIDTH)
+            # display Z axis
+            pygame.draw.aaline(
+                self.screen, BLUE,
+                self.convert(ORIGIN),
+                self.convert(self.axis_z), LINE_WIDTH)
+
+        # the function must receive the view to draw things in it
+        update(self)
+
+def cube(view):
+    for i in range(3):
+        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
+    view.drawLine(TEST_POINTS[3], TEST_POINTS[0])
+    for i in range(4,7):
+        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
+    view.drawLine(TEST_POINTS[-1], TEST_POINTS[4])
+    for i in range(4):
+        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+4])
+
+    for p in TEST_POINTS:
+        view.drawPoint(p)
 
 
 if __name__ == '__main__':
     view = View()
-    view.run()
+    view.run(cube)
 
