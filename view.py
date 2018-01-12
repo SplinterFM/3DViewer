@@ -43,10 +43,12 @@ class View:
         self.axis_y = Point3d(0, 100, 0)
         self.axis_z = Point3d(0, 0, 100)
         self.cam_center = Point3d(CENTER)
-        self.cam_pitch  = 0.2
+        self.cam_center.y += 100
+        self.cam_pitch  = 0.1
         self.cam_yaw  = -0.2
         self.cam_zoom = 1
         self.show_axis = True
+        self.update = None
 
     def run(self, update):
         """Receives an update function to be called every loop"""
@@ -138,23 +140,31 @@ class View:
                 self.convert(self.axis_z), LINE_WIDTH)
 
         # the function must receive the view to draw things in it
-        update(self)
+        if update:
+            update()
 
-def cube(view):
-    for i in range(3):
-        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
-    view.drawLine(TEST_POINTS[3], TEST_POINTS[0])
-    for i in range(4,7):
-        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
-    view.drawLine(TEST_POINTS[-1], TEST_POINTS[4])
-    for i in range(4):
-        view.drawLine(TEST_POINTS[i], TEST_POINTS[i+4])
+class TestApp:
+    def __init__(self):
+        self.view = View()
 
-    for p in TEST_POINTS:
-        view.drawPoint(p)
+    def run(self):
+        self.view.run(self.cube)
+
+    def cube(self):
+        for i in range(3):
+            self.view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
+        self.view.drawLine(TEST_POINTS[3], TEST_POINTS[0])
+        for i in range(4,7):
+            self.view.drawLine(TEST_POINTS[i], TEST_POINTS[i+1])
+        self.view.drawLine(TEST_POINTS[-1], TEST_POINTS[4])
+        for i in range(4):
+            self.view.drawLine(TEST_POINTS[i], TEST_POINTS[i+4])
+
+        for p in TEST_POINTS:
+            self.view.drawPoint(p)
 
 
 if __name__ == '__main__':
-    view = View()
-    view.run(cube)
+    app = TestApp()
+    app.run()
 
